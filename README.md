@@ -22,7 +22,7 @@
     - `senetence_token`
     - `sentence_mask`
     - `idiom_mask`
-    - `idiom_candidiate_indexes`
+    - `idiom_candidiate_index`
     - `label`
 
 - [x] 成语释义： 
