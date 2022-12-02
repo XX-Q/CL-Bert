@@ -31,7 +31,7 @@
     - `senetence_token`
     - `sentence_mask`
     - `idiom_mask`
-    - `idiom_candidiate_patterns_token`
+    - `idiom_candidiate_pattern_token`
     - `idiom_candidiate_pattern_mask`
     - `label`
   

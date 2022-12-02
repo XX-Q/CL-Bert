@@ -9,7 +9,7 @@ from typing import Optional
 
 class ClassifyBert(nn.Module):
 
-    def __init__(self, pretrained_model_name, idiom_mask_length, idiom_vocab_size):
+    def __init__(self, pretrained_model_name, idiom_mask_length=4, idiom_vocab_size=3848):
 
         super(ClassifyBert, self).__init__()
 
