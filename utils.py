@@ -5,7 +5,13 @@ import re
 import torch
 
 
-def data_process(data, idiom_tag="#idiom#", tokenizer=None, length=300, idiom_mask_length=4, replace_idiom=False):
+def data_process(data,
+                 idiom_tag="#idiom#",
+                 tokenizer=None,
+                 length=300,
+                 idiom_mask_length=4,
+                 replace_idiom=False):
+
     sentence = data['content']
     idiom_candidate = data['candidates']
     idiom_ground_truth = data['groundTruth']
@@ -15,7 +21,7 @@ def data_process(data, idiom_tag="#idiom#", tokenizer=None, length=300, idiom_ma
     processed_data_list = []
     for i in range(idiom_num):
         if replace_idiom:
-            tmp_idiom_ground_truth = idiom_ground_truth
+            tmp_idiom_ground_truth = idiom_ground_truth.copy()
         else:
             tmp_idiom_ground_truth = [tokenizer.unk_token] * idiom_num
         tmp_idiom_ground_truth[i] = idiom_mask_str

@@ -87,9 +87,9 @@ class DualBert(nn.Module):
             self,
             input_ids: Optional[torch.Tensor],
             attention_mask: Optional[torch.Tensor],
+            candidate_mask: Optional[torch.Tensor],
             candidate_pattern: Optional[torch.Tensor],
             candidate_pattern_mask: Optional[torch.Tensor],
-            candidate_mask: Optional[torch.Tensor],
             labels: Optional[torch.Tensor],
     ):
         r"""
