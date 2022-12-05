@@ -6,6 +6,8 @@
 
 ## 数据集
 项目原始数据集[ChID](https://github.com/chujiezheng/ChID-Dataset),并引入外部成语词典数据[chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua/blob/master/data/idiom.json)
+整理后词典数据集文件[data](https://disk.pku.edu.cn:443/link/950B5EA958E7DF572FCD3CE05CD80E05)（下载后放到根目录下）
+
 
 项目数据[下载链接](https://disk.pku.edu.cn:443/link/EA423797D6BC5E8CBC322F17B7DC3471)(有效期限：2024-12-31 23:59)
 ，需下载并解压至项目文件夹下
@@ -16,7 +18,7 @@
 
 ### 数据使用
 数据使用分为两种方式
-- [ ] 成语分类：
+- [x] 成语分类：
   - 将数据集中3848条成语编号为成语词表
   - 每条数据包含：
     - `senetence_token`
