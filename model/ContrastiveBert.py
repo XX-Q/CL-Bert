@@ -13,7 +13,7 @@ class ContrastiveBert(nn.Module):
                  pretrained_model_name,
                  use_same_model=False,
                  idiom_mask_length=4,
-                 ):
+                 use_cls=True):
 
         super(ContrastiveBert, self).__init__()
 
@@ -28,12 +28,22 @@ class ContrastiveBert(nn.Module):
                       self.sentence_model.config.hidden_size),
             nn.Tanh()
         )
+
+        self.use_cls = use_cls
+        if not use_cls:
+            self.idiom_pooler = nn.Sequential(
+                nn.Linear(self.idiom_model.config.hidden_size * idiom_mask_length,
+                          self.idiom_model.config.hidden_size),
+                nn.Tanh()
+            )
+
         self.idiom_mask_length = idiom_mask_length
         self.use_same_model = use_same_model
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
     def new_params(self):
-        return [self.sentence_pooler]
+        return [self.sentence_pooler,self.logit_scale] if self.use_cls \
+            else [self.sentence_pooler, self.idiom_pooler, self.logit_scale]
 
     def pretrained_params(self):
         return [self.sentence_model] if self.use_same_model \
@@ -62,8 +72,18 @@ class ContrastiveBert(nn.Module):
                 attention_mask: torch.LongTensor of shape `(batch_size, sequence_length)`
         """
         # (batch_size, hidden_size)
-        idiom_pattern_outputs = self.idiom_model(input_ids, attention_mask=attention_mask)[1]
-        idiom_pattern_outputs = idiom_pattern_outputs / torch.norm(idiom_pattern_outputs, dim=1, keepdim=True)
+        if self.use_cls:
+            idiom_pattern_outputs = self.idiom_model(input_ids, attention_mask=attention_mask)[1]
+            idiom_pattern_outputs = idiom_pattern_outputs / torch.norm(idiom_pattern_outputs, dim=1, keepdim=True)
+        else:
+            # (batch_size, sequence_length, hidden_size)
+            idiom_pattern_outputs = self.idiom_model(input_ids, attention_mask=attention_mask)[0]
+            # (batch_size, idiom_mask_length*hidden_size)
+            idiom_pattern_outputs = idiom_pattern_outputs[:, 1:1 + self.idiom_mask_length, :].reshape(
+                -1, self.idiom_mask_length * idiom_pattern_outputs.shape[-1])
+            # (batch_size, hidden_size)
+            idiom_pattern_outputs = self.idiom_pooler(idiom_pattern_outputs)
+            idiom_pattern_outputs = idiom_pattern_outputs / torch.norm(idiom_pattern_outputs, dim=1, keepdim=True)
 
         return idiom_pattern_outputs
 
