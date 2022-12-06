@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 from transformers import BertModel
 from typing import Optional
@@ -28,6 +29,15 @@ class ContrastiveBert(nn.Module):
             nn.Tanh()
         )
         self.idiom_mask_length = idiom_mask_length
+        self.use_same_model = use_same_model
+        self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
+
+    def new_params(self):
+        return [self.sentence_pooler]
+
+    def pretrained_params(self):
+        return [self.sentence_model] if self.use_same_model \
+            else [self.sentence_model, self.idiom_model]
 
     def embed_sentence(self, input_ids, attention_mask, candidate_mask):
         r"""
@@ -64,7 +74,7 @@ class ContrastiveBert(nn.Module):
             candidate_mask: Optional[torch.Tensor],
             candidate_pattern: Optional[torch.Tensor],
             candidate_pattern_mask: Optional[torch.Tensor],
-            labels: Optional[torch.Tensor],
+            labels: Optional[torch.Tensor] = None,
     ):
         r"""
         input_ids: torch.LongTensor of shape `(batch_size, sequence_length)`
@@ -76,6 +86,8 @@ class ContrastiveBert(nn.Module):
 
         labels: torch.LongTensor of shape `(batch_size, )`
         """
+        with torch.no_grad():
+            self.logit_scale.data.clamp_(-100, 100)
 
         # (batch_size, hidden_size)
         idiom_outputs = self.embed_sentence(input_ids, attention_mask, candidate_mask)
@@ -89,6 +101,7 @@ class ContrastiveBert(nn.Module):
         if labels is not None:
             # (batch_size, candidate_num*batch_size)
             i2c_matrix = torch.mm(idiom_outputs, idiom_pattern_outputs.t())
+            i2c_matrix *= self.logit_scale
             c2i_matrix = i2c_matrix.t()
 
             # (batch_size, )
@@ -116,4 +129,5 @@ class ContrastiveBert(nn.Module):
             idiom_pattern_outputs = idiom_pattern_outputs.reshape(B, N, -1)
             # (batch_size, candidate_num)
             i2c_matrix = torch.matmul(idiom_outputs.unsqueeze(-2), idiom_pattern_outputs.transpose(-1, -2)).squeeze(-2)
+            i2c_matrix *= self.logit_scale
             return i2c_matrix.argamx(dim=-1)

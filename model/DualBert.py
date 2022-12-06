@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 from transformers import BertModel
 from typing import Optional
@@ -28,16 +29,31 @@ class DualBert(nn.Module):
                       self.sentence_model.config.hidden_size),
             nn.Tanh()
         )
+
         self.mode = mode
         if self.mode == 'linear':
             self.aggregation = nn.Sequential(
-                nn.Linear(self.sentence_model.config.hidden_size + self.idiom_model.hidden_size,
+                nn.Linear(self.sentence_model.config.hidden_size + self.idiom_model.config.hidden_size,
                           linear_hidden_size),
                 nn.Tanh(),
                 nn.Linear(linear_hidden_size, 1)
             )
+        elif self.mode == 'cross_attention':
+            self.cross_attention = nn.MultiheadAttention(self.sentence_model.config.hidden_size, 8)
+            self.aggregation = nn.Sequential(nn.Tanh(), nn.Linear(self.sentence_model.config.hidden_size, 1))
+        else:
+            self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
         self.idiom_mask_length = idiom_mask_length
+        self.use_same_model = use_same_model
+
+    def new_params(self):
+        return [self.sentence_pooler, self.logit_scale] if self.mode != 'linear' \
+            else [self.sentence_pooler, self.aggregation]
+
+    def pretrained_params(self):
+        return [self.sentence_model] if self.use_same_model \
+            else [self.sentence_model, self.idiom_model]
 
     def embed_sentence(self, input_ids, attention_mask, candidate_mask):
         r"""
@@ -77,10 +93,18 @@ class DualBert(nn.Module):
         elif self.mode == 'euclidean_distance':
             logits = -torch.norm(sentence_outputs.unsqueeze(-2) - idiom_pattern_outputs, dim=-1)
         elif self.mode == 'linear':
-            logits = self.aggregation(torch.cat([sentence_outputs.unsqueeze(-2), idiom_pattern_outputs],
+            candidate_num = idiom_pattern_outputs.shape[1]
+            logits = self.aggregation(torch.cat([sentence_outputs.unsqueeze(-2).repeat(1, candidate_num, 1),
+                                                 idiom_pattern_outputs],
                                                 dim=-1)).squeeze(-1)
+        elif self.mode == 'cross_attention':
+            logits = self.cross_attention(idiom_pattern_outputs.transpose(0, 1),
+                                          sentence_outputs.unsqueeze(0),
+                                          sentence_outputs.unsqueeze(0))[0]  # (candidate_num, batch_size, hidden_size)
+            logits = self.aggregation(logits.transpose(0, 1)).squeeze(-1)  # (batch_size, candidate_num)
         else:
             raise ValueError('mode must be cosine_similarity or euclidean_distance or linear')
+
         return logits
 
     def forward(
@@ -90,7 +114,7 @@ class DualBert(nn.Module):
             candidate_mask: Optional[torch.Tensor],
             candidate_pattern: Optional[torch.Tensor],
             candidate_pattern_mask: Optional[torch.Tensor],
-            labels: Optional[torch.Tensor],
+            labels: Optional[torch.Tensor] = None,
     ):
         r"""
         input_ids: torch.LongTensor of shape `(batch_size, sequence_length)`
@@ -102,6 +126,8 @@ class DualBert(nn.Module):
 
         labels: torch.LongTensor of shape `(batch_size, )`
         """
+        with torch.no_grad():
+            self.logit_scale.data.clamp_(-100, 100)
 
         # (batch_size, hidden_size)
         idiom_outputs = self.embed_sentence(input_ids, attention_mask, candidate_mask)
@@ -116,7 +142,7 @@ class DualBert(nn.Module):
         candidate_pattern_outputs = idiom_pattern_outputs.reshape(B, N, -1)
         # (batch_size, candidate_num)
         logits = self.calculate_logits(idiom_outputs, candidate_pattern_outputs)
-
+        logits *= self.logit_scale
         if labels is not None:
             loss = F.cross_entropy(logits, labels)
             return loss

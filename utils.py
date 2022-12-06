@@ -25,7 +25,9 @@ def data_process(data,
         else:
             tmp_idiom_ground_truth = [tokenizer.unk_token] * idiom_num
         tmp_idiom_ground_truth[i] = idiom_mask_str
-        processed_sentence = sentence.replace(idiom_tag, '{}').format(*tmp_idiom_ground_truth)
+        for replace_item in tmp_idiom_ground_truth:
+            sentence = sentence.replace(idiom_tag, replace_item,1)
+        processed_sentence = sentence
 
         if len(processed_sentence) > length:
             idiom_index = processed_sentence.find(idiom_mask_str)

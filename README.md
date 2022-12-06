@@ -24,7 +24,7 @@
     - `senetence_token`
     - `sentence_mask`
     - `idiom_mask`
-    - `idiom_candidiate_index`
+    - `idiom_candidate_index`
     - `label`
 
 - [x] 成语释义： 
@@ -33,8 +33,8 @@
     - `senetence_token`
     - `sentence_mask`
     - `idiom_mask`
-    - `idiom_candidiate_pattern_token`
-    - `idiom_candidiate_pattern_mask`
+    - `idiom_candidate_pattern_token`
+    - `idiom_candidate_pattern_mask`
     - `label`
   
 ## 模型

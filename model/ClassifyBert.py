@@ -23,6 +23,12 @@ class ClassifyBert(nn.Module):
 
         self.idiom_mask_length = idiom_mask_length
 
+    def new_params(self):
+        return [self.sentence_pooler, self.cls]
+
+    def pretrained_params(self):
+        return [self.sentence_model]
+
     def embed_sentence(self, input_ids, attention_mask, candidate_mask):
         r"""
                 input_ids: torch.LongTensor of shape `(batch_size, sequence_length)`
@@ -39,7 +45,7 @@ class ClassifyBert(nn.Module):
         idiom_outputs = self.sentence_pooler(idiom_outputs)
         idiom_logits = self.cls(idiom_outputs)
 
-        return idiom_outputs
+        return idiom_logits
 
     def forward(
             self,
@@ -47,7 +53,7 @@ class ClassifyBert(nn.Module):
             attention_mask: Optional[torch.Tensor],
             candidate_mask: Optional[torch.Tensor],
             candidate_index: Optional[torch.Tensor],
-            labels: Optional[torch.Tensor],
+            labels: Optional[torch.Tensor] = None,
     ):
         r"""
         input_ids: torch.LongTensor of shape `(batch_size, sequence_length)`

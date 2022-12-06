@@ -1,3 +1,1 @@
-from .ContrastiveBert import ContrastiveBert
-from .ClassifyBert import ClassifyBert
-from .DualBert import DualBert
+from .lightning_module import ChIDModel
