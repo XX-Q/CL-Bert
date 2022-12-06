@@ -67,7 +67,7 @@ class ChIDDatasetIC(Dataset):
                 "sentence_mask": sentence_tokenization_output["attention_mask"].bool(),
                 # 1 for idiom mask tokens, 0 for others
                 "idiom_token": (sentence_tokenization_output["input_ids"] == tokenizer.mask_token_id),
-                "idiom_candidate_index": processed_idiom_candidate,
+                "idiom_candidate_index": torch.tensor(processed_idiom_candidate),
                 # index in candidates
                 "label": torch.tensor(processed_idiom_ground_truth)
             }

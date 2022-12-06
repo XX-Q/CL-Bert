@@ -16,10 +16,10 @@ def parse_args():
     parser.add_argument("--pretrained_model_name", type=str, default="hfl/chinese-roberta-wwm-ext")
     parser.add_argument("--idiom_mask_length", type=int, default=4)
     parser.add_argument("--idiom_vocab_size", type=int, default=3848)
-    parser.add_argument("--learning_rate", type=float, default=2e-5)
+    parser.add_argument("--learning_rate", type=float, default=1.5e-5)
     parser.add_argument("--weight_decay", type=float, default=0.2)
     parser.add_argument("--warm_up_proportion", type=float, default=0.05)
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--max_epochs", type=int, default=10)
     parser.add_argument("--gpus", type=int, default=1)
     parser.add_argument("--num_workers", type=int, default=4)
@@ -27,13 +27,13 @@ def parse_args():
     parser.add_argument("--output_dir", type=str, default="/root/autodl-tmp")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--task_type", type=str, default="IC")
-    parser.add_argument("--max_length", type=int, default=300)
+    parser.add_argument("--max_length", type=int, default=512)
     parser.add_argument("--epoch", type=int, default=15)
 
     args = parser.parse_args()
     if args.model_type == "classify":
         assert args.task_type == "IC"
-    elif args.model_type in ["contrastive","dual"]:
+    elif args.model_type in ["contrastive", "dual"]:
         assert args.task_type == "IE"
     else:
         raise ValueError("model_type must be in ['classify', 'contrastive', 'dual']")
