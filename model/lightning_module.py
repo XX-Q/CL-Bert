@@ -14,6 +14,7 @@ class ChIDModel(pl.LightningModule):
                  pretrained_model_name: str = "hfl/chinese-roberta-wwm-ext",
                  idiom_mask_length: int = 4,
                  idiom_vocab_size: int = 3848,
+                 idiom_use_cls: bool = True,
                  learning_rate: float = 1.5e-5,
                  weight_decay: float = 0.2,
                  warm_up_proportion: float = 0.05,
@@ -23,10 +24,11 @@ class ChIDModel(pl.LightningModule):
         if model_type == "classify":
             self.core_model = ClassifyBert(pretrained_model_name, idiom_mask_length, idiom_vocab_size)
         elif model_type == "dual":
-            self.core_model = DualBert(pretrained_model_name, use_same_model=False, idiom_mask_length=idiom_mask_length)
+            self.core_model = DualBert(pretrained_model_name, use_same_model=False,
+                                       idiom_mask_length=idiom_mask_length, use_cls=idiom_use_cls)
         elif model_type == "contrastive":
             self.core_model = ContrastiveBert(pretrained_model_name, use_same_model=False,
-                                              idiom_mask_length=idiom_mask_length)
+                                              idiom_mask_length=idiom_mask_length, use_cls=idiom_use_cls)
         self._lr = learning_rate
         self.new_lr = learning_rate * 5
         self._weight_decay = weight_decay

@@ -12,10 +12,11 @@ from dataloader import ChIDDataLoader
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", type=str, default="classify")
+    parser.add_argument("--model_type", type=str, default="dual")
     parser.add_argument("--pretrained_model_name", type=str, default="hfl/chinese-roberta-wwm-ext")
     parser.add_argument("--idiom_mask_length", type=int, default=4)
     parser.add_argument("--idiom_vocab_size", type=int, default=3848)
+    parser.add_argument("--idiom_use_cls", type=bool, default=False)
     parser.add_argument("--learning_rate", type=float, default=1.5e-5)
     parser.add_argument("--weight_decay", type=float, default=0.2)
     parser.add_argument("--warm_up_proportion", type=float, default=0.05)
@@ -26,9 +27,9 @@ def parse_args():
     parser.add_argument("--data_dir", type=str, default="./data")
     parser.add_argument("--output_dir", type=str, default="/root/autodl-tmp")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--task_type", type=str, default="IC")
+    parser.add_argument("--task_type", type=str, default="IE")
     parser.add_argument("--max_length", type=int, default=512)
-    parser.add_argument("--epoch", type=int, default=15)
+    parser.add_argument("--epoch", type=int, default=10)
 
     args = parser.parse_args()
     if args.model_type == "classify":
@@ -67,6 +68,7 @@ def main(args):
                       pretrained_model_name=args.pretrained_model_name,
                       idiom_mask_length=args.idiom_mask_length,
                       idiom_vocab_size=args.idiom_vocab_size,
+                      idiom_use_cls=args.idiom_use_cls,
                       learning_rate=args.learning_rate,
                       weight_decay=args.weight_decay,
                       warm_up_proportion=args.warm_up_proportion,
@@ -98,7 +100,6 @@ def main(args):
                          precision=16,
                          enable_progress_bar=True,
                          max_epochs=args.epoch,
-                         min_epochs=10,
                          )
     trainer.fit(model, dataloader)
     trainer.test(model, dataloader)
