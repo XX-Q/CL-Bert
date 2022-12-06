@@ -79,7 +79,8 @@ def main(args):
         os.makedirs(log_path)
 
     logger = pl.loggers.TensorBoardLogger(args.output_dir, name=args.model_type)
-
+    checkpoint = pl.callbacks.ModelCheckpoint(os.path.join(args.output_dir, args.model_type, "checkpoints"),
+                                              filename="{epoch}-{val_acc:.4f}", every_n_epochs=1, save_top_k=-1)
     progress_bar = pl.callbacks.RichProgressBar(
         theme=pl.callbacks.progress.rich_progress.RichProgressBarTheme(
             description="green_yellow",
