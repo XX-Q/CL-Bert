@@ -9,8 +9,16 @@ from typing import Optional
 
 class ClassifyBert(nn.Module):
 
-    def __init__(self, pretrained_model_name, idiom_mask_length=4, idiom_vocab_size=3848):
-
+    def __init__(self,
+                 pretrained_model_name,
+                 idiom_mask_length=4,
+                 idiom_vocab_size=3848):
+        """
+        Args:
+            pretrained_model_name: name of pretrained model
+            idiom_mask_length: length of idiom mask
+            idiom_vocab_size: size of idiom vocabulary
+        """
         super(ClassifyBert, self).__init__()
 
         self.sentence_model = BertModel.from_pretrained(pretrained_model_name)

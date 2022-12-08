@@ -11,7 +11,17 @@ def data_process(data,
                  length=300,
                  idiom_mask_length=4,
                  replace_idiom=False):
+    """
+    clip the content into set length , turn sentence with multiple idiom blanks into multiple sentences
+    optionally replace other idiom with the true idiom
 
+    data: dict of data
+    idiom_tag: the tag of idiom
+    tokenizer: tokenizer used to tokenize the sentence
+    length: the length of sentence
+    idiom_mask_length: the length of idiom mask
+    replace_idiom: whether to replace other idioms with the truth
+    """
     sentence = data['content']
     idiom_candidate = data['candidates']
     idiom_ground_truth = data['groundTruth']
