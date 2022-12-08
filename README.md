@@ -2,7 +2,7 @@
 
 计算语言学作业
 
-本项目baseline及数据集划分来自项目[ChID_Baseline](https://github.com/Zce1112zslx/ChID_baseline)
+本项目baseline方法及数据集划分来自项目[ChID_Baseline](https://github.com/Zce1112zslx/ChID_baseline)
 
 ## 数据集
 项目原始数据集[ChID](https://github.com/chujiezheng/ChID-Dataset),并引入外部成语词典数据[chinese-xinhua](https://github.com/pwxcoo/chinese-xinhua/blob/master/data/idiom.json)
@@ -38,4 +38,25 @@
     - `label`
   
 ## 模型
-本项目基于在中文语料上预训练的[RoBERTa模型](https://github.com/ymcui/Chinese-BERT-wwm)
+本项目基于在中文语料上预训练的[RoBERTa模型](https://github.com/ymcui/Chinese-BERT-wwm)进行设计，根据数据的使用方式不同，模型分为两类：**分类模型**与**对比模型**
+### 分类模型
+- [x] model/baseline.py、model/ClassifyBert.py
+  - 输入：`senetence_token`、`sentence_mask`、`idiom_mask`、`idiom_candidate_index`、[`label`]
+  - 输出：`predict`
+  - 损失函数：`CrossEntropyLoss`
+  - 评价指标：`Accuracy`
+示意图：
+![classify model](img/classify_model.png)
+  
+### 对比模型
+- [x] model/DualBert.py、model/ContrastiveBert.py
+  - 输入：`senetence_token`、`sentence_mask`、`idiom_mask`、`idiom_candidate_pattern_token`、`idiom_candidate_pattern_mask`、[`label`]
+  - 输出：`predict`
+  - 损失函数：`InfoNCELoss`
+  - 评价指标：`Accuracy`
+示意图：
+![contrastive model](img/contrastive_model.png)
+
+### 结合模型
+综合模型将两类任务在同一个模型中进行学习，示意图：
+![combination model](img/combination_model.png)
