@@ -39,6 +39,8 @@ def parse_args():
                         dest="number of gpus to use")
     parser.add_argument("--num_workers", type=int, default=4,
                         dest="number of workers for dataloader")
+    parser.add_argument("--precision", type=int, default=16,
+                        dest="precision for training")
 
     parser.add_argument("--pretrained_model_name", type=str, default="hfl/chinese-roberta-wwm-ext",
                         dest="pretrained model name")
