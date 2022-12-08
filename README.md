@@ -45,7 +45,7 @@
   - 输出：`predict`
   - 损失函数：`CrossEntropyLoss`
   - 评价指标：`Accuracy`
-示意图：
+
 ![classify model](img/classify_model.png)
   
 ### 对比模型
@@ -54,9 +54,10 @@
   - 输出：`predict`
   - 损失函数：`InfoNCELoss`
   - 评价指标：`Accuracy`
-示意图：
+
 ![contrastive model](img/contrastive_model.png)
 
 ### 结合模型
-综合模型将两类任务在同一个模型中进行学习，示意图：
+综合模型将两类任务在同一个模型中进行学习。
+
 ![combination model](img/combination_model.png)
