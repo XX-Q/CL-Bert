@@ -66,7 +66,7 @@ class ChIDModel(pl.LightningModule):
                                               use_mask=idiom_use_mask,
                                               use_generation=use_pretrained_generation)
         elif model_type == "baseline":
-            self.core_model = BaseBert(pretrained_model_name, idiom_mask_length)
+            self.core_model = BaseBert(pretrained_model_name, idiom_mask_length, use_generation=use_pretrained_generation)
 
         self.fine_lr = fine_tune_learning_rate
         self.new_lr = learning_rate

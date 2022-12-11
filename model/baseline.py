@@ -4,7 +4,8 @@ import torch.nn.functional as F
 import numpy as np
 
 from allennlp.nn.util import batched_index_select
-from transformers import AutoModelForMaskedLM
+from transformers import AutoModelForMaskedLM, AutoConfig
+from transformers.models.bert.modeling_bert import BertOnlyMLMHead
 from typing import Optional
 
 
@@ -12,26 +13,37 @@ class BaseBert(nn.Module):
 
     def __init__(self,
                  pretrained_model_name,
-                 idiom_mask_length=4):
+                 idiom_mask_length=4,
+                 use_generation=True,):
         """
         Args:
             pretrained_model_name: the name of the pretrained model
             idiom_mask_length: length of idiom mask
+            use_generation: whether to use pretrained cls head
         """
 
         super().__init__()
         self.pre_model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name)
         self.sentence_model = self.pre_model.bert
-        self.gen_cls = self.pre_model.cls
-
+        self.use_generation = use_generation
+        if use_generation:
+            self.gen_cls = self.pre_model.cls
+        else:
+            config = AutoConfig.from_pretrained(pretrained_model_name)
+            self.gen_cls = BertOnlyMLMHead(config)
         self.idiom_mask_length = idiom_mask_length
 
     def new_params(self):
-        return []
+        if self.use_generation:
+            return []
+        else:
+            return [self.gen_cls]
 
     def pretrained_params(self):
-        return [self.pre_model]
-
+        if self.use_generation:
+            return [self.pre_model]
+        else:
+            return [self.sentence_model]
     def embed_sentence(self, input_ids, attention_mask, candidate_mask, candidate_index=None):
         r"""
                 input_ids: torch.LongTensor of shape `(batch_size, sequence_length)`
