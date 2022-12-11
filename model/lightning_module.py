@@ -48,7 +48,9 @@ class ChIDModel(pl.LightningModule):
         super().__init__()
         self.optim = None
         if model_type == "classify":
-            self.core_model = ClassifyBert(pretrained_model_name, idiom_mask_length, idiom_vocab_size)
+            self.core_model = ClassifyBert(pretrained_model_name,
+                                           idiom_mask_length=idiom_mask_length,
+                                           idiom_vocab_size=idiom_vocab_size)
         elif model_type == "dual":
             self.core_model = DualBert(pretrained_model_name,
                                        use_same_model=False,
@@ -66,7 +68,9 @@ class ChIDModel(pl.LightningModule):
                                               use_mask=idiom_use_mask,
                                               use_generation=use_pretrained_generation)
         elif model_type == "baseline":
-            self.core_model = BaseBert(pretrained_model_name, idiom_mask_length, use_generation=use_pretrained_generation)
+            self.core_model = BaseBert(pretrained_model_name,
+                                       idiom_mask_length=idiom_mask_length,
+                                       use_generation=use_pretrained_generation)
 
         self.fine_lr = fine_tune_learning_rate
         self.new_lr = learning_rate
