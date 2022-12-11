@@ -48,6 +48,9 @@ def parse_args():
                         dest="idiom vocabulary size")
     parser.add_argument("--idiom_use_cls", type=bool, default=False,
                         dest="use cls token for idiom pattern embedding or use idiom tokens")
+    parser.add_argument("--idiom_use_mask", type=bool, default=False,
+                        dest="use mask token for idiom pattern embedding or use idiom tokens")
+
     parser.add_argument("--sim_mode", type=str, default="cosine_similarity",
                         dest="similarity mode for idiom pattern similarity",
                         choices=['cosine_similarity', 'euclidean_distance', 'linear', 'cross_attention'])
@@ -147,7 +150,8 @@ def main(args):
                          max_epochs=args.epoch,
                          )
     trainer.fit(model, dataloader)
-    trainer.test(model, dataloader)
+    # test the model on the best checkpoint
+    trainer.test(ckpt_path="best")
 
 
 if __name__ == '__main__':

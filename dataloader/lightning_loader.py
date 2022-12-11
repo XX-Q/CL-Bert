@@ -45,14 +45,14 @@ class ChIDDataLoader(pl.LightningDataModule):
                                          tokenizer_name=self._tokenizer_name,
                                          max_len=self._max_length,
                                          idiom_mask_length=self._idiom_mask_length,
-                                         replace_idiom=self._replace_idiom, )
+                                         replace_idiom=False)
 
         self.test_dataset = dataset_model(self._data_path,
                                           chid_file="test_data.json",
                                           tokenizer_name=self._tokenizer_name,
                                           max_len=self._max_length,
                                           idiom_mask_length=self._idiom_mask_length,
-                                          replace_idiom=self._replace_idiom, )
+                                          replace_idiom=False)
 
     def train_dataloader(self):
         return torch.utils.data.DataLoader(self.train_dataset,

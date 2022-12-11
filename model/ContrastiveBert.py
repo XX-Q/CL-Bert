@@ -7,6 +7,7 @@ from allennlp.nn.util import batched_index_select
 from transformers import BertModel, AutoModelForMaskedLM
 from typing import Optional
 
+
 class AllGather(torch.autograd.Function):
     """An autograd function that performs allgather on a tensor."""
 
@@ -29,7 +30,9 @@ class AllGather(torch.autograd.Function):
             grad_output[ctx.batch_size * ctx.rank: ctx.batch_size * (ctx.rank + 1)],
         )
 
+
 allgather = AllGather.apply
+
 
 class ContrastiveBert(nn.Module):
 
@@ -38,6 +41,7 @@ class ContrastiveBert(nn.Module):
                  use_same_model=False,
                  idiom_mask_length=4,
                  use_cls=True,
+                 use_mask=False,
                  use_generation=True):
         """
         Args:
@@ -71,6 +75,7 @@ class ContrastiveBert(nn.Module):
                 nn.Tanh()
             )
 
+        self.use_mask = use_mask
         self.use_generation = use_generation
         if use_generation:
             self.gen_cls = self.bert_model.cls
@@ -80,7 +85,7 @@ class ContrastiveBert(nn.Module):
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
 
     def new_params(self):
-        return [self.sentence_pooler,self.logit_scale] if self.use_cls \
+        return [self.sentence_pooler, self.logit_scale] if self.use_cls \
             else [self.sentence_pooler, self.idiom_pooler, self.logit_scale]
 
     def pretrained_params(self):
@@ -185,6 +190,8 @@ class ContrastiveBert(nn.Module):
             idiom_outputs = self.embed_sentence(input_ids, attention_mask, candidate_mask)
             idiom_logits = None
 
+        if self.use_mask:
+            candidate_pattern[:, :, 1:1 + self.idiom_mask_length] = 103  # [MASK] token id
         B, N, L = candidate_pattern.shape
         candidate_pattern = candidate_pattern.reshape(-1, L)
         candidate_pattern_mask = candidate_pattern_mask.reshape(-1, L)

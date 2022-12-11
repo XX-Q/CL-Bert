@@ -17,6 +17,7 @@ class ChIDModel(pl.LightningModule):
                  idiom_mask_length: int = 4,
                  idiom_vocab_size: int = 3848,
                  idiom_use_cls: bool = True,
+                 idiom_use_mask: bool = True,
                  sim_mode: str = "cosine_similarity",
                  linear_hidden_size: int = 256,
                  use_pretrained_generation: bool = True,
@@ -32,6 +33,7 @@ class ChIDModel(pl.LightningModule):
             idiom_mask_length: length of idiom mask
             idiom_vocab_size: size of idiom vocabulary
             idiom_use_cls: whether to use cls token as idiom pattern embedding of idiom tokens
+            idiom_use_mask: whether to use mask token as idiom pattern embedding of idiom tokens
             sim_mode: similarity mode for dual model,
                                 can be 'cosine_similarity','euclidean_distance','linear','cross_attention'
             linear_hidden_size: hidden size of linear layer for dual model when sim_mode is 'linear'
@@ -54,12 +56,14 @@ class ChIDModel(pl.LightningModule):
                                        mode=sim_mode,
                                        linear_hidden_size=linear_hidden_size,
                                        use_cls=idiom_use_cls,
+                                       use_mask=idiom_use_mask,
                                        use_generation=use_pretrained_generation)
         elif model_type == "contrastive":
             self.core_model = ContrastiveBert(pretrained_model_name,
                                               use_same_model=False,
                                               idiom_mask_length=idiom_mask_length,
                                               use_cls=idiom_use_cls,
+                                              use_mask=idiom_use_mask,
                                               use_generation=use_pretrained_generation)
         elif model_type == "baseline":
             self.core_model = BaseBert(pretrained_model_name, idiom_mask_length)

@@ -17,6 +17,7 @@ class DualBert(nn.Module):
                  mode='cosine_similarity',
                  linear_hidden_size=256,
                  use_cls=True,
+                 use_mask=False,
                  use_generation=True):
         """
         Args:
@@ -52,6 +53,7 @@ class DualBert(nn.Module):
                 nn.Tanh()
             )
 
+        self.use_mask = use_mask
         self.use_generation = use_generation
         if use_generation:
             self.gen_cls = self.bert_model.cls
@@ -207,6 +209,8 @@ class DualBert(nn.Module):
             idiom_outputs = self.embed_sentence(input_ids, attention_mask, candidate_mask)
             idiom_logits = None
 
+        if self.use_mask:
+            candidate_pattern[:, :, 1:1 + self.idiom_mask_length] = 103  # [MASK] token id
         B, N, L = candidate_pattern.shape
         candidate_pattern = candidate_pattern.reshape(-1, L)
         candidate_pattern_mask = candidate_pattern_mask.reshape(-1, L)
