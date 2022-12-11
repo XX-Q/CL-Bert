@@ -14,7 +14,7 @@ class BaseBert(nn.Module):
     def __init__(self,
                  pretrained_model_name,
                  idiom_mask_length=4,
-                 use_generation=True,):
+                 use_generation=True, ):
         """
         Args:
             pretrained_model_name: the name of the pretrained model
@@ -44,6 +44,7 @@ class BaseBert(nn.Module):
             return [self.pre_model]
         else:
             return [self.sentence_model]
+
     def embed_sentence(self, input_ids, attention_mask, candidate_mask, candidate_index=None):
         r"""
                 input_ids: torch.LongTensor of shape `(batch_size, sequence_length)`
