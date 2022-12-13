@@ -41,6 +41,7 @@ class ChIDDatasetIC(Dataset):
         cache_path = os.path.join(data_path, dataset_name + '.pkl')
         cached = os.path.isfile(cache_path)
         if cached:
+            print("Loading cached data from {}".format(cache_path))
             with open(cache_path, 'rb') as f:
                 self.data = pickle.load(f)
         else:
@@ -93,6 +94,7 @@ class ChIDDatasetIC(Dataset):
                 # index in candidates
                 "label": torch.tensor(processed_idiom_ground_truth)
             }
+            print("Saving cached data to {}".format(cache_path))
             with open(cache_path, 'wb') as f:
                 pickle.dump(self.data, f)
 

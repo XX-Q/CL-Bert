@@ -28,7 +28,7 @@ def parse_args():
                         help="max length of input sequence")
     parser.add_argument("--idiom_mask_length", type=int, default=4,
                         help="idiom mask length for idiom masking")
-    parser.add_argument("--replace_idiom", type=bool, default=False,
+    parser.add_argument("--replace_idiom", action="store_true", default=False,
                         help="replace idiom with ground truth or not")
 
     parser.add_argument("--epoch", type=int, default=10,
@@ -46,9 +46,9 @@ def parse_args():
                         help="pretrained model name")
     parser.add_argument("--idiom_vocab_size", type=int, default=3848,
                         help="idiom vocabulary size")
-    parser.add_argument("--idiom_use_cls", type=bool, default=False,
+    parser.add_argument("--idiom_use_cls", action="store_true", default=False,
                         help="use cls token for idiom pattern embedding or use idiom tokens")
-    parser.add_argument("--idiom_use_mask", type=bool, default=False,
+    parser.add_argument("--idiom_use_mask", action="store_true", default=False,
                         help="use mask token for idiom pattern embedding or use idiom tokens")
 
     parser.add_argument("--sim_mode", type=str, default="cosine_similarity",
@@ -56,7 +56,7 @@ def parse_args():
                         choices=['cosine_similarity', 'euclidean_distance', 'linear', 'cross_attention'])
     parser.add_argument("--linear_hidden_size", type=int, default=256,
                         help="hidden size for linear layer in linear mode dual model")
-    parser.add_argument("--use_pretrained_generation", type=bool, default=True,
+    parser.add_argument("--use_pretrained_generation", action="store_true", default=False,
                         help="use pretrained generation cls head or not")
 
     parser.add_argument("--seed", type=int, default=42,
@@ -77,6 +77,11 @@ def parse_args():
         assert args.task_type == "IE"
     else:
         raise ValueError("model_type must be in ['classify', 'contrastive', 'dual', 'baseline']")
+
+    args_str = "args:\n"
+    for k, v in args.__dict__.items():
+        args_str += f"{k}: {v}\t"
+    print(args_str)
 
     return args
 
