@@ -34,7 +34,7 @@ class ChIDDatasetIC(Dataset):
 
         dataset_name = '{}_{}_{}_{}_{}_IC'.format(chid_file[:-5],
                                                   idiom_mask_length,
-                                                  tokenizer_name,
+                                                  tokenizer_name.replace('/', '_'),
                                                   max_len,
                                                   'R' if replace_idiom else 'NR')
 
