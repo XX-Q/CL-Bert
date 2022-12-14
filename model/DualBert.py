@@ -44,17 +44,17 @@ class DualBert(nn.Module):
         self.mode = mode
 
         if self.mode == 'cosine_similarity' or self.mode == 'euclidean_distance' or self.mode == 'linear':
-            self.sentence_pooler = nn.Sequential(
-                nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
-                          self.sentence_model.config.hidden_size, bias=True),
-                nn.GELU(),
-                nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
-                nn.Linear(self.sentence_model.config.hidden_size,
-                          self.sentence_model.config.hidden_size // 2,
-                          bias=True),
-            )
-
             if not use_cls:
+                self.sentence_pooler = nn.Sequential(
+                    nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
+                              self.sentence_model.config.hidden_size, bias=True),
+                    nn.GELU(),
+                    nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
+                    nn.Linear(self.sentence_model.config.hidden_size,
+                              self.sentence_model.config.hidden_size // 2,
+                              bias=True),
+                )
+
                 self.idiom_pooler = nn.Sequential(
                     nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
                               self.sentence_model.config.hidden_size, bias=True),
@@ -62,6 +62,16 @@ class DualBert(nn.Module):
                     nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
                     nn.Linear(self.sentence_model.config.hidden_size,
                               self.sentence_model.config.hidden_size // 2,
+                              bias=True),
+                )
+            else:
+                self.sentence_pooler = nn.Sequential(
+                    nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
+                              self.sentence_model.config.hidden_size, bias=True),
+                    nn.GELU(),
+                    nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
+                    nn.Linear(self.sentence_model.config.hidden_size,
+                              self.sentence_model.config.hidden_size,
                               bias=True),
                 )
 
