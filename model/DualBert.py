@@ -34,31 +34,42 @@ class DualBert(nn.Module):
         self.bert_model = AutoModelForMaskedLM.from_pretrained(pretrained_model_name)
 
         self.sentence_model = self.bert_model.bert
+        self.idiom_mask_length = idiom_mask_length
+        self.use_same_model = use_same_model
         if use_same_model:
             self.idiom_model = self.sentence_model
         else:
             self.idiom_model = BertModel.from_pretrained(pretrained_model_name)
-
-        self.sentence_pooler = nn.Sequential(
-            nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
-                      self.sentence_model.config.hidden_size),
-            nn.Tanh()
-        )
-
         self.use_cls = use_cls
-        if not use_cls:
-            self.idiom_pooler = nn.Sequential(
-                nn.Linear(self.idiom_model.config.hidden_size * idiom_mask_length,
-                          self.idiom_model.config.hidden_size),
-                nn.Tanh()
+        self.mode = mode
+
+        if self.mode == 'cosine_similarity' or self.mode == 'euclidean_distance' or self.mode == 'linear':
+            self.sentence_pooler = nn.Sequential(
+                nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
+                          self.sentence_model.config.hidden_size, bias=True),
+                nn.GELU(),
+                nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
+                nn.Linear(self.sentence_model.config.hidden_size,
+                          self.sentence_model.config.hidden_size // 2,
+                          bias=True),
             )
+
+            if not use_cls:
+                self.idiom_pooler = nn.Sequential(
+                    nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
+                              self.sentence_model.config.hidden_size, bias=True),
+                    nn.GELU(),
+                    nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
+                    nn.Linear(self.sentence_model.config.hidden_size,
+                              self.sentence_model.config.hidden_size // 2,
+                              bias=True),
+                )
 
         self.use_mask = use_mask
         self.use_generation = use_generation
         if use_generation:
             self.gen_cls = self.bert_model.cls
 
-        self.mode = mode
         if self.mode == 'linear':
             self.aggregation = nn.Sequential(
                 nn.Linear(self.sentence_model.config.hidden_size + self.idiom_model.config.hidden_size,
@@ -67,19 +78,20 @@ class DualBert(nn.Module):
                 nn.Linear(linear_hidden_size, 1)
             )
         elif self.mode == 'cross_attention':
-            self.cross_attention = nn.MultiheadAttention(self.sentence_model.config.hidden_size, 8)
-            self.aggregation = nn.Sequential(nn.Tanh(), nn.Linear(self.sentence_model.config.hidden_size, 1))
+            self.cross_attention = nn.MultiheadAttention(embed_dim=self.sentence_model.config.hidden_size, num_heads=8)
+            self.aggregation = nn.Sequential(nn.Linear(self.sentence_model.config.hidden_size * self.idiom_mask_length,
+                                                       self.sentence_model.config.hidden_size),
+                                             nn.GELU(),
+                                             nn.LayerNorm(self.sentence_model.config.hidden_size),
+                                             nn.Linear(self.sentence_model.config.hidden_size, 1))
 
         self.logit_scale = nn.Parameter(torch.ones([]) * np.log(1 / 0.07))
-
-        self.idiom_mask_length = idiom_mask_length
-        self.use_same_model = use_same_model
 
     def new_params(self):
         if self.mode == 'linear':
             params = [self.sentence_pooler, self.aggregation, self.logit_scale]
         elif self.mode == 'cross_attention':
-            params = [self.sentence_pooler, self.cross_attention, self.aggregation, self.logit_scale]
+            return [self.cross_attention, self.aggregation, self.logit_scale]
         else:
             params = [self.sentence_pooler, self.logit_scale]
 
@@ -123,8 +135,11 @@ class DualBert(nn.Module):
             idiom_logits = None
 
         # (batch_size, hidden_size)
-        idiom_outputs = self.sentence_pooler(idiom_outputs)
-        idiom_outputs = idiom_outputs / torch.norm(idiom_outputs, dim=-1, keepdim=True)
+        if self.mode == 'cross_attention':
+            idiom_outputs = idiom_outputs.reshape(-1, self.idiom_mask_length, sentence_outputs.shape[-1])
+        else:
+            idiom_outputs = self.sentence_pooler(idiom_outputs)
+            idiom_outputs = idiom_outputs / torch.norm(idiom_outputs, dim=-1, keepdim=True)
         if self.use_generation:
             return idiom_outputs, idiom_logits
         else:
@@ -148,8 +163,15 @@ class DualBert(nn.Module):
             idiom_pattern_outputs = idiom_pattern_outputs[:, 1:1 + self.idiom_mask_length, :].reshape(
                 -1, self.idiom_mask_length * idiom_pattern_outputs.shape[-1])
             # (batch_size, hidden_size)
-            idiom_pattern_outputs = self.idiom_pooler(idiom_pattern_outputs)
-            idiom_pattern_outputs = idiom_pattern_outputs / torch.norm(idiom_pattern_outputs, dim=1, keepdim=True)
+            if self.mode == 'cross_attention':
+                # (batch_size, idiom_mask_length, hidden_size)
+                idiom_pattern_outputs = idiom_pattern_outputs.reshape(-1, self.idiom_mask_length,
+                                                                      idiom_pattern_outputs.shape[-1] //
+                                                                      self.idiom_mask_length)
+
+            else:
+                idiom_pattern_outputs = self.idiom_pooler(idiom_pattern_outputs)
+                idiom_pattern_outputs = idiom_pattern_outputs / torch.norm(idiom_pattern_outputs, dim=1, keepdim=True)
 
         return idiom_pattern_outputs
 
@@ -169,10 +191,22 @@ class DualBert(nn.Module):
                                                  idiom_pattern_outputs],
                                                 dim=-1)).squeeze(-1)
         elif self.mode == 'cross_attention':
+            # idiom_pattern_outputs: (batch_size, candidate_num, idiom_mask_length, hidden_size)
+            # sentence_outputs: (batch_size, idiom_mask_length, hidden_size)
+            if self.use_cls:
+                idiom_pattern_outputs = idiom_pattern_outputs.unsqueeze(-2)
+            B, C, L, H = idiom_pattern_outputs.shape
+            idiom_pattern_outputs = idiom_pattern_outputs.reshape(-1, L, H)
+            sentence_outputs = sentence_outputs.unsqueeze(1).repeat(1, C, 1, 1).reshape(-1, L, H)
+            # (idiom_mask_length,candidate_num*batch_size, hidden_size)
             logits = self.cross_attention(idiom_pattern_outputs.transpose(0, 1),
-                                          sentence_outputs.unsqueeze(0),
-                                          sentence_outputs.unsqueeze(0))[0]  # (candidate_num, batch_size, hidden_size)
-            logits = self.aggregation(logits.transpose(0, 1)).squeeze(-1)  # (batch_size, candidate_num)
+                                          sentence_outputs.transpose(0, 1),
+                                          sentence_outputs.transpose(0, 1),
+                                          need_weights=False)[0]
+            # (batch_size, candidate_num, idiom_mask_length * hidden_size)
+            logits = logits.transpose(0, 1).reshape(B, C, L * H)
+            # (batch_size, candidate_num)
+            logits = self.aggregation(logits).squeeze(-1)
         else:
             raise ValueError('mode must be cosine_similarity or euclidean_distance or linear or cross_attention')
 
@@ -218,7 +252,7 @@ class DualBert(nn.Module):
         idiom_pattern_outputs = self.embed_idiom_pattern(candidate_pattern, candidate_pattern_mask)
 
         # (batch_size, candidate_num, hidden_size)
-        candidate_pattern_outputs = idiom_pattern_outputs.reshape(B, N, -1)
+        candidate_pattern_outputs = idiom_pattern_outputs.reshape(B, N, *idiom_pattern_outputs.shape[1:])
         # (batch_size, candidate_num)
         logits = self.calculate_logits(idiom_outputs, candidate_pattern_outputs)
         logits *= self.logit_scale

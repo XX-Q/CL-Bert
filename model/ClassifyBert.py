@@ -24,10 +24,11 @@ class ClassifyBert(nn.Module):
         self.sentence_model = BertModel.from_pretrained(pretrained_model_name)
         self.sentence_pooler = nn.Sequential(
             nn.Linear(self.sentence_model.config.hidden_size * idiom_mask_length,
-                      self.sentence_model.config.hidden_size),
-            nn.Tanh()
+                      self.sentence_model.config.hidden_size, bias=True),
+            nn.GELU(),
+            nn.LayerNorm(self.sentence_model.config.hidden_size, eps=1e-12, elementwise_affine=True),
         )
-        self.cls = nn.Linear(self.sentence_model.config.hidden_size, idiom_vocab_size)
+        self.cls = nn.Linear(self.sentence_model.config.hidden_size, idiom_vocab_size, bias=True)
 
         self.idiom_mask_length = idiom_mask_length
 
