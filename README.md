@@ -61,3 +61,63 @@
 综合模型将两类任务在同一个模型中进行学习。
 
 ![combination model](img/combination_model.png)
+
+## 训练
+### random initialized head
+#### word classification
+``
+python train.py --model_type baseline --batch_size 24  --task_type IE --epoch 10 --warm_up_proportion 0.05 
+``
+#### idiom classification
+``  
+python train.py --model_type classify --batch_size 24  --task_type IC --epoch 10 --warm_up_proportion 0.05 
+``
+#### idiom + cosine
+``
+python train.py --model_type dual --batch_size 24  --task_type IE --sim_mode cosine_similarity  --epoch 10 --warm_up_proportion 0.05
+``
+#### [CLS] + cosine
+``
+python train.py --model_type dual --batch_size 24  --task_type IE --sim_mode cosine_similarity --idiom_use_cls --epoch 10 --warm_up_proportion 0.05
+``
+#### mask + cosine
+``
+python train.py --model_type dual --batch_size 24  --task_type IE --sim_mode cosine_similarity --idiom_use_mask --epoch 10 --warm_up_proportion 0.05
+``
+#### idiom + cross-attention
+``
+python train.py --model_type dual --batch_size 24  --task_type IE --sim_mode cross_attention --epoch 10 --warm_up_proportion 0.05
+`` 
+#### mask + cross-attention
+``
+python train.py --model_type dual --batch_size 24  --task_type IE --sim_mode cross_attention --idiom_use_mask --epoch 10 --warm_up_proportion 0.05
+``
+
+### pre-trained classification head
+#### word classification
+``
+python train.py --model_type baseline --batch_size 24 --task_type IE --epoch 10 --warm_up_proportion 0.05 --use_pretrained_generation
+``
+#### idiom + cosine
+``
+python train.py --model_type dual --batch_size 24 --task_type IE --sim_mode cosine_similarity  --epoch 10 --warm_up_proportion 0.05 --use_pretrained_generation
+``
+#### [CLS] + cosine
+``
+python train.py --model_type dual --batch_size 24 --task_type IE --sim_mode cosine_similarity --idiom_use_cls --epoch 10 --warm_up_proportion 0.05 --use_pretrained_generation
+``
+#### mask + cosine
+``
+python train.py --model_type dual --batch_size 24 --task_type IE --sim_mode cosine_similarity --idiom_use_mask --epoch 10 --warm_up_proportion 0.05 --use_pretrained_generation
+``
+#### idiom + cross-attention
+``
+python train.py --model_type dual --batch_size 24 --task_type IE --sim_mode cross_attention --epoch 10 --warm_up_proportion 0.05 --use_pretrained_generation
+``
+#### mask + cross-attention
+``
+python train.py --model_type dual --batch_size 24 --task_type IE --sim_mode cross_attention --idiom_use_mask --epoch 10 --warm_up_proportion 0.05 --use_pretrained_generation
+``
+
+## 实验结果
+![img.png](img/experimental_result.png)
